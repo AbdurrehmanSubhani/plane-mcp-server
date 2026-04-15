@@ -43,6 +43,7 @@ class ServerSettings:
     allow_mutations: bool
     request_timeout_seconds: float
     cors_origins: tuple[str, ...]
+    public_base_url: str | None
     server_name: str = "Plane MCP Server"
 
     @classmethod
@@ -65,6 +66,7 @@ class ServerSettings:
             allow_mutations=_parse_bool(os.getenv("PLANE_ALLOW_MUTATIONS"), default=False),
             request_timeout_seconds=float(os.getenv("PLANE_REQUEST_TIMEOUT_SECONDS", "30")),
             cors_origins=tuple(_parse_csv(os.getenv("PLANE_CORS_ORIGINS"))),
+            public_base_url=(os.getenv("PLANE_MCP_PUBLIC_BASE_URL") or "").strip() or None,
         )
 
     def is_allowed_base_url(self, base_url: str) -> bool:

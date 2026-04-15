@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 from typing import Any
+from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
@@ -284,6 +285,7 @@ def create_http_app(settings: ServerSettings) -> Starlette:
         ],
         lifespan=_lifespan(mcp),
     )
+    app.add_middleware(PublicHostRewriteMiddleware, settings=settings)
     app.add_middleware(PlaneAuthMiddleware, settings=settings)
     if settings.cors_origins:
         app.add_middleware(
@@ -327,6 +329,18 @@ class PlaneAuthMiddleware(BaseHTTPMiddleware):
         finally:
             if token is not None:
                 reset_current_auth(token)
+
+
+class PublicHostRewriteMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, *, settings: ServerSettings):
+        super().__init__(app)
+        self.settings = settings
+        self.public_host = _public_host(settings)
+
+    async def dispatch(self, request: Request, call_next):
+        if self.public_host and request.url.path.startswith("/mcp"):
+            request.scope["headers"] = _rewrite_host_header(request.scope["headers"], self.public_host)
+        return await call_next(request)
 
 
 async def _request(
@@ -378,3 +392,21 @@ def _csv(values: list[str] | None) -> str | None:
     if not values:
         return None
     return ",".join(values)
+
+
+def _public_host(settings: ServerSettings) -> bytes | None:
+    if not settings.public_base_url:
+        return None
+    parsed = urlparse(settings.public_base_url)
+    if not parsed.hostname:
+        return None
+    port = parsed.port
+    if port:
+        return f"{parsed.hostname}:{port}".encode("latin-1")
+    return parsed.hostname.encode("latin-1")
+
+
+def _rewrite_host_header(headers: list[tuple[bytes, bytes]], host_value: bytes) -> list[tuple[bytes, bytes]]:
+    filtered = [(key, value) for key, value in headers if key.lower() != b"host"]
+    filtered.append((b"host", host_value))
+    return filtered
