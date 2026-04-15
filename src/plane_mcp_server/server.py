@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 from typing import Any
-from urllib.parse import urlparse
 
 from mcp.server.fastmcp import FastMCP
 from starlette.applications import Starlette
@@ -335,11 +334,11 @@ class PublicHostRewriteMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, *, settings: ServerSettings):
         super().__init__(app)
         self.settings = settings
-        self.public_host = _public_host(settings)
+        self.trusted_host = settings.trusted_mcp_host.encode("latin-1")
 
     async def dispatch(self, request: Request, call_next):
-        if self.public_host and request.url.path.startswith("/mcp"):
-            request.scope["headers"] = _rewrite_host_header(request.scope["headers"], self.public_host)
+        if request.url.path.startswith("/mcp"):
+            request.scope["headers"] = _rewrite_host_header(request.scope["headers"], self.trusted_host)
         return await call_next(request)
 
 
@@ -392,18 +391,6 @@ def _csv(values: list[str] | None) -> str | None:
     if not values:
         return None
     return ",".join(values)
-
-
-def _public_host(settings: ServerSettings) -> bytes | None:
-    if not settings.public_base_url:
-        return None
-    parsed = urlparse(settings.public_base_url)
-    if not parsed.hostname:
-        return None
-    port = parsed.port
-    if port:
-        return f"{parsed.hostname}:{port}".encode("latin-1")
-    return parsed.hostname.encode("latin-1")
 
 
 def _rewrite_host_header(headers: list[tuple[bytes, bytes]], host_value: bytes) -> list[tuple[bytes, bytes]]:

@@ -43,6 +43,7 @@ Remote-first MCP server for Plane that works with `streamable-http` and `stdio`.
 | `PLANE_MCP_HOST` | no | HTTP bind host. Defaults to `0.0.0.0`. |
 | `PLANE_MCP_PORT` | no | HTTP bind port. Defaults to `8000`. |
 | `PLANE_MCP_PUBLIC_BASE_URL` | no | Public MCP base URL when running behind a reverse proxy, for example `https://plane-mcp.example.com`. |
+| `PLANE_MCP_TRUSTED_HOST` | no | Host header to present to the internal MCP app behind a reverse proxy. Defaults to `127.0.0.1:8000`. |
 | `PLANE_CORS_ORIGINS` | no | Comma-separated CORS origins for browser-based MCP clients. Keep empty unless needed. |
 | `PLANE_API_KEY` | no | Fallback token for `stdio` mode only. |
 | `PLANE_WORKSPACE_SLUG` | no | Fallback workspace slug for `stdio` mode only. |
@@ -62,6 +63,7 @@ Run over streamable HTTP:
 PLANE_DEFAULT_BASE_URL="https://plane.example.com/api" \
 PLANE_ALLOWED_BASE_URLS="https://plane.example.com/api" \
 PLANE_MCP_PUBLIC_BASE_URL="https://plane-mcp.example.com" \
+PLANE_MCP_TRUSTED_HOST="127.0.0.1:8000" \
 PLANE_ALLOW_MUTATIONS="true" \
 plane-mcp-server streamable-http
 ```
